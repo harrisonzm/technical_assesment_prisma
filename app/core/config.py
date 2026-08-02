@@ -1,16 +1,20 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 
 class Settings(BaseSettings):
     """Configuración de la aplicación, cargada desde variables de entorno o .env."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
@@ -20,6 +24,7 @@ class Settings(BaseSettings):
     environment: Literal["local", "dev", "staging", "prod"] = "local"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
+    service_name: str = "backend"
 
     # Servidor
     host: str = "0.0.0.0"
@@ -31,6 +36,10 @@ class Settings(BaseSettings):
 
     # Base de datos
     database_url: str = "sqlite+aiosqlite:///./app.db"
+
+    # Consumidor
+    consumer_interval_seconds: float = 5.0
+    log_file_path: str | None = None
 
     @property
     def is_prod(self) -> bool:
