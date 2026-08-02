@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app_db}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LOG_FILE_PATH: /var/log/technical_assessment_prisma/backend.log
+      SERVICE_NAME: backend
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app_user:change_me@db:5432/app_db}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LOG_FILE_PATH: /var/log/technical_assessment_prisma/consumer.log
+      SERVICE_NAME: consumer
+      CONSUMER_FAIL_ONCE: ${CONSUMER_FAIL_ONCE:-false}
+      CONSUMER_INTERVAL_SECONDS: ${CONSUMER_INTERVAL_SECONDS:-5}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app_user:change_me@db:5432/app_db}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

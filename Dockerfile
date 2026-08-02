@@ -38,14 +38,16 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-# Switch to the non-privileged user to run the application.
-USER appuser
-
 # Copy the source code into the container.
 COPY . .
+
+# Ensure the application can write its logs as a non-root user.
+RUN mkdir -p /var/log/technical_assessment_prisma \
+    && chown -R appuser:appuser /app /var/log/technical_assessment_prisma
 
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-# Run the application.
-CMD  uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Run the application as a non-root user.
+USER appuser
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
