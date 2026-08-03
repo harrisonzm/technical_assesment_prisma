@@ -5,8 +5,9 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.Exceptions.RequestError import ConflictError
 from app.db.models.solicitudes import Solicitudes
-from app.schemas.enums import Priority, RequestType
-from app.schemas.solicitudes import SolicitudCreate
+from app.repositories.pagination import Page
+from app.schemas.enums import Priority, RequestType, State
+from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters
 from app.services.solicitudes import SolicitudService
 
 
@@ -62,3 +63,29 @@ async def test_create_solicitud_rolls_back_concurrent_duplicate():
     repository.create.assert_awaited_once_with(data)
     session.commit.assert_not_awaited()
     session.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_list_solicitudes_delegates_filters_to_repository():
+    filters = SolicitudFilters(
+        state=State.RECEIVED,
+        type=RequestType.PLATFORM_ACCESS,
+        priority=Priority.HIGH,
+        offset=10,
+        limit=5,
+    )
+    expected_page = Page(
+        items=[MagicMock(spec=Solicitudes)],
+        total=16,
+        offset=10,
+        limit=5,
+    )
+    repository = MagicMock()
+    repository.list = AsyncMock(return_value=expected_page)
+    session = MagicMock()
+
+    result = await SolicitudService(repository, session).list(filters)
+
+    assert result is expected_page
+    assert result.has_next is True
+    repository.list.assert_awaited_once_with(filters)
