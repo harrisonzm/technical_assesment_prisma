@@ -1,3 +1,4 @@
+
 # Servicio de solicitudes institucionales
 
 API REST construida con FastAPI y PostgreSQL para registrar, consultar y actualizar solicitudes institucionales. La solución incluye migraciones y datos iniciales con Alembic, un consumidor HTTP independiente, logs persistentes y pruebas automatizadas.
@@ -45,12 +46,12 @@ La primera migración crea el esquema y una migración posterior agrega 30 solic
 
 Servicios disponibles:
 
-| Servicio | Dirección |
-| --- | --- |
-| API | `http://localhost:8000` |
-| Swagger UI | `http://localhost:8000/docs` |
-| OpenAPI | `http://localhost:8000/openapi.json` |
-| PostgreSQL | `localhost:5432` |
+| Servicio   | Dirección                             |
+| ---------- | -------------------------------------- |
+| API        | `http://localhost:8000`              |
+| Swagger UI | `http://localhost:8000/docs`         |
+| OpenAPI    | `http://localhost:8000/openapi.json` |
+| PostgreSQL | `localhost:5432`                     |
 
 ### 3. Detener la solución
 
@@ -139,11 +140,11 @@ curl -X PATCH http://localhost:8000/api/v1/solicitudes/<UUID>/estado \
 
 Valores permitidos por la API:
 
-| Campo | Valores |
-| --- | --- |
-| `type` | `Acceso a plataforma`, `Soporte técnico`, `Académica`, `Administrativa` |
-| `priority` | `Baja`, `Media`, `Alta` |
-| `state` | `Recibida`, `En proceso`, `Completada`, `Rechazada` |
+| Campo        | Valores                                                                           |
+| ------------ | --------------------------------------------------------------------------------- |
+| `type`     | `Acceso a plataforma`, `Soporte técnico`, `Académica`, `Administrativa` |
+| `priority` | `Baja`, `Media`, `Alta`                                                     |
+| `state`    | `Recibida`, `En proceso`, `Completada`, `Rechazada`                       |
 
 Los payloads inválidos, valores fuera del catálogo y campos desconocidos responden con `422 Unprocessable Entity`.
 
