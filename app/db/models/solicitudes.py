@@ -13,7 +13,7 @@ from ..base import Base
 class Solicitudes(Base):
     __tablename__ = "solicitudes"
     
-    id: Mapped[str] = mapped_column(
+    id: Mapped[UUID] = mapped_column(
             Uuid,
             primary_key=True,
             default=uuid4,
