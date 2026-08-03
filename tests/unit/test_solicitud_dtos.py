@@ -33,6 +33,21 @@ def test_create_solicitud_rejects_invalid_email():
         )
 
 
+def test_create_solicitud_rejects_unknown_fields():
+    with pytest.raises(ValidationError) as error:
+        SolicitudCreate(
+            external_id="EXT-001",
+            type=RequestType.ACADEMIC,
+            applicant="Ada Lovelace",
+            email="ada@example.com",
+            description="Question",
+            priority=Priority.LOW,
+            unexpected_field="not allowed",
+        )
+
+    assert error.value.errors()[0]["type"] == "extra_forbidden"
+
+
 def test_update_only_exports_fields_that_were_provided():
     data = SolicitudUpdate(state=State.COMPLETED)
 

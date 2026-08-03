@@ -136,13 +136,19 @@ async def test_create_solicitud_endpoint_returns_409_for_duplicate_external_id()
     [
         {**VALID_PAYLOAD, "email": "not-an-email"},
         {**VALID_PAYLOAD, "type": "Tipo inexistente"},
+        {**VALID_PAYLOAD, "unexpected_field": "not allowed"},
         {
             key: value
             for key, value in VALID_PAYLOAD.items()
             if key != "description"
         },
     ],
-    ids=["invalid-email", "invalid-catalog-value", "missing-required-field"],
+    ids=[
+        "invalid-email",
+        "invalid-catalog-value",
+        "unknown-field",
+        "missing-required-field",
+    ],
 )
 async def test_create_solicitud_endpoint_rejects_invalid_payload(
     invalid_payload: dict[str, str],
