@@ -1,4 +1,4 @@
-import AppError from .
+from .AppError import AppError
 class ResourceNotFoundError(AppError):
     status_code = 400
     code = 'resource_not_found'
