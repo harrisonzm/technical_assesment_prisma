@@ -1,12 +1,14 @@
 import time
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.router import router as api_v1_router
 from app.core.Exceptions.Handlers.register import register_error_handlers
+from app.core.Exceptions.RequestError import DatabaseUnavailableError
 from app.core.config.config import Settings, get_settings
 from app.core.config.logging import emit_log
 from app.core.config.request_context import build_request_context, reset_context, set_context
@@ -35,6 +37,7 @@ def create_app() -> FastAPI:
     )
     
     register_error_handlers(app)
+    app.include_router(api_v1_router, prefix=settings.api_v1_prefix)
 
     @app.middleware("http")
     async def structured_logging_middleware(request: Request, call_next):
@@ -109,7 +112,9 @@ def create_app() -> FastAPI:
                 status_code=503,
                 error=exc,
             )
-            raise HTTPException(status_code=503, detail="database unavailable") from exc
+            raise DatabaseUnavailableError(
+                "Database is unavailable",
+            ) from exc
 
     return app
 
