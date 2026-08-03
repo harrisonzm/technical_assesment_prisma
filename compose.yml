@@ -1,4 +1,18 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -30,12 +44,15 @@ services:
       LOG_FILE_PATH: /var/log/technical_assessment_prisma/backend.log
       SERVICE_NAME: backend
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app_user:change_me@db:5432/app_db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
     ports:
       - "8000:8000"
     volumes:
       - backend-logs:/var/log/technical_assessment_prisma
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
@@ -79,5 +96,6 @@ services:
 
 volumes:
   postgres-data:
+  redis-data:
   backend-logs:
   consumer-logs:

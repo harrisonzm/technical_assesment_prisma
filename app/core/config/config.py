@@ -26,6 +26,19 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
+    # Rendimiento HTTP
+    gzip_minimum_size: int = Field(default=500, ge=0)
+    redis_url: str = "redis://redis:6379/0"
+    redis_timeout_seconds: float = Field(default=0.2, gt=0)
+    cache_ttl_seconds: int = Field(default=30, ge=0)
+    cache_key_prefix: str = "technical-assessment:http-cache"
+    rate_limit_requests: int = Field(default=100, ge=0)
+    rate_limit_window_seconds: int = Field(default=60, ge=1)
+    rate_limit_key_prefix: str = "technical-assessment:rate-limit"
+    request_max_concurrency: int = Field(default=50, ge=1)
+    request_queue_size: int = Field(default=100, ge=0)
+    request_queue_timeout_seconds: float = Field(default=10.0, gt=0)
+
     # Seguridad
     secret_key: str = Field(default="change-me", min_length=8)
     cors_origins: list[str] = ["http://localhost:3000"]
