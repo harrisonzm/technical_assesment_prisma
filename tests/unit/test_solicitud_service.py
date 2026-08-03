@@ -8,7 +8,7 @@ from app.core.Exceptions.RequestError import ConflictError, ResourceNotFoundErro
 from app.db.models.solicitudes import Solicitudes
 from app.repositories.pagination import Page
 from app.schemas.enums import Priority, RequestType, State
-from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters
+from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters, SolicitudUpdate
 from app.services.solicitudes import SolicitudService
 
 
@@ -120,3 +120,48 @@ async def test_get_solicitud_by_id_raises_404_when_record_does_not_exist():
     assert error.value.code == "resource_not_found"
     assert error.value.details == {"solicitud_id": str(solicitud_id)}
     repository.get_by_id.assert_awaited_once_with(solicitud_id)
+
+
+@pytest.mark.asyncio
+async def test_update_solicitud_state_updates_record_and_commits():
+    solicitud_id = UUID("12345678-1234-5678-1234-567812345678")
+    solicitud = MagicMock(spec=Solicitudes)
+    updated_solicitud = MagicMock(spec=Solicitudes)
+    repository = MagicMock()
+    repository.get_by_id = AsyncMock(return_value=solicitud)
+    repository.update = AsyncMock(return_value=updated_solicitud)
+    session = MagicMock()
+    session.commit = AsyncMock()
+
+    result = await SolicitudService(repository, session).update_state(
+        solicitud_id,
+        State.IN_PROGRESS,
+    )
+
+    assert result is updated_solicitud
+    repository.get_by_id.assert_awaited_once_with(solicitud_id)
+    repository.update.assert_awaited_once_with(
+        solicitud,
+        SolicitudUpdate(state=State.IN_PROGRESS),
+    )
+    session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_update_solicitud_state_raises_404_without_writing_when_missing():
+    solicitud_id = UUID("00000000-0000-0000-0000-000000000000")
+    repository = MagicMock()
+    repository.get_by_id = AsyncMock(return_value=None)
+    repository.update = AsyncMock()
+    session = MagicMock()
+    session.commit = AsyncMock()
+
+    with pytest.raises(ResourceNotFoundError):
+        await SolicitudService(repository, session).update_state(
+            solicitud_id,
+            State.REJECTED,
+        )
+
+    repository.get_by_id.assert_awaited_once_with(solicitud_id)
+    repository.update.assert_not_awaited()
+    session.commit.assert_not_awaited()

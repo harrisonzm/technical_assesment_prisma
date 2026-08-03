@@ -25,6 +25,10 @@ class SolicitudUpdate(BaseModel):
     state: State | None = None
 
 
+class SolicitudStateUpdate(BaseModel):
+    state: State
+
+
 class SolicitudFilters(BaseModel):
     id: UUID | None = None
     external_id: str | None = Field(default=None, min_length=1, max_length=100)
