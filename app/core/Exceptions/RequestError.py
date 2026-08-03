@@ -1,6 +1,6 @@
 from .AppError import AppError
 class ResourceNotFoundError(AppError):
-    status_code = 400
+    status_code = 404
     code = 'resource_not_found'
 
 class ConflictError(AppError):
