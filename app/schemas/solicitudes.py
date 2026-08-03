@@ -53,3 +53,11 @@ class SolicitudResponse(BaseModel):
     state: State
     created_at: datetime
     updated_at: datetime
+
+
+class SolicitudPageResponse(BaseModel):
+    items: list[SolicitudResponse]
+    total: int = Field(ge=0)
+    offset: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    has_next: bool
