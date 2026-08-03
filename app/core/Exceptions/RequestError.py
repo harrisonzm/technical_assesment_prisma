@@ -16,7 +16,7 @@ class DatabaseUnavailableError(AppError):
     code = "database_unavailable"
 
 
-class BussinessRuleError(AppError):
+class BusinessRuleError(AppError):
     status_code = 422
     code = "business_rule_violation"
 
