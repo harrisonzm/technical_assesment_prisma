@@ -3,7 +3,7 @@ from uuid import uuid4
 from alembic import command
 from alembic.config import Config
 import pytest
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import MetaData, Table, create_engine, delete, insert, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 
@@ -43,7 +43,12 @@ def test_migrations_create_schema_and_seed_dummy_data(monkeypatch):
         migration_engine = create_engine(migration_url)
         try:
             with migration_engine.connect() as connection:
-                assert inspect(connection).has_table("solicitudes")
+                inspector = inspect(connection)
+                assert inspector.has_table("solicitudes")
+                assert all(
+                    "email" not in constraint["column_names"]
+                    for constraint in inspector.get_unique_constraints("solicitudes")
+                )
                 assert connection.scalar(
                     text(
                         "SELECT COUNT(*) FROM solicitudes "
@@ -52,7 +57,55 @@ def test_migrations_create_schema_and_seed_dummy_data(monkeypatch):
                 ) == 30
                 assert connection.scalar(
                     text("SELECT version_num FROM alembic_version")
-                ) == "20260803_02"
+                ) == "20260803_03"
+
+                solicitudes = Table(
+                    "solicitudes",
+                    MetaData(),
+                    autoload_with=connection,
+                )
+                shared_email = "shared.migration@example.com"
+                connection.execute(
+                    insert(solicitudes),
+                    [
+                        {
+                            "id": uuid4(),
+                            "externalId": "MIGRATION-EMAIL-001",
+                            "type": "Acceso a plataforma",
+                            "applicant": "Migration User One",
+                            "email": shared_email,
+                            "description": "First request with shared email",
+                            "priority": "Baja",
+                            "state": "Recibida",
+                        },
+                        {
+                            "id": uuid4(),
+                            "externalId": "MIGRATION-EMAIL-002",
+                            "type": "Soporte técnico",
+                            "applicant": "Migration User Two",
+                            "email": shared_email,
+                            "description": "Second request with shared email",
+                            "priority": "Media",
+                            "state": "En proceso",
+                        },
+                    ],
+                )
+                connection.commit()
+
+                assert connection.scalar(
+                    text(
+                        "SELECT COUNT(*) FROM solicitudes "
+                        "WHERE email = :email"
+                    ),
+                    {"email": shared_email},
+                ) == 2
+
+                connection.execute(
+                    delete(solicitudes).where(
+                        solicitudes.c.externalId.like("MIGRATION-EMAIL-%")
+                    )
+                )
+                connection.commit()
         finally:
             migration_engine.dispose()
 
