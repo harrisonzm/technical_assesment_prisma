@@ -2,8 +2,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from ..AppError import AppError
-from app.core.logging import emit_log
-from app.core.request_context import get_context
+from app.core.config.logging import emit_log
+from app.core.config.request_context import get_context
 from app.schemas.errors import create_error_response
 
 

@@ -2,7 +2,7 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.core.request_context import get_context
+from app.core.config.request_context import get_context
 from app.schemas.errors import create_error_response
 
 

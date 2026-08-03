@@ -2,8 +2,8 @@ from uuid import UUID
 
 from starlette.requests import Request
 
-from app.core.logging import build_log_event
-from app.core.request_context import (
+from app.core.config.logging import build_log_event
+from app.core.config.request_context import (
     RequestContext,
     build_request_context,
     normalize_uuid,

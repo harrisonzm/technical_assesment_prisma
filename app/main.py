@@ -5,9 +5,9 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.Exceptions.Handlers.register import register_error_handlers
-from app.core.config import Settings, get_settings
-from app.core.logging import emit_log
-from app.core.request_context import build_request_context, reset_context, set_context
+from app.core.config.config import Settings, get_settings
+from app.core.config.logging import emit_log
+from app.core.config.request_context import build_request_context, reset_context, set_context
 
 
 def create_app() -> FastAPI:
