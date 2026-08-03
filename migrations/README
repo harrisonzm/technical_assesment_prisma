@@ -1,0 +1,9 @@
+Database migrations are managed with Alembic.
+
+Apply all migrations with:
+
+    alembic upgrade head
+
+Create a migration after changing SQLAlchemy models with:
+
+    alembic revision --autogenerate -m "describe the change"
