@@ -1,0 +1,161 @@
+classDiagram
+    direction LR
+
+    class SolicitudCreate {
+        +str external_id
+        +RequestType type
+        +str applicant
+        +EmailStr email
+        +str description
+        +Priority priority
+        +State state
+    }
+    class SolicitudFilters {
+        +UUID id
+        +str external_id
+        +RequestType type
+        +Priority priority
+        +State state
+        +int offset
+        +int limit
+    }
+    class SolicitudUpdate {
+        +RequestType type
+        +str applicant
+        +EmailStr email
+        +str description
+        +Priority priority
+        +State state
+    }
+    class SolicitudResponse
+    class SolicitudPageResponse {
+        +list items
+        +int total
+        +int offset
+        +int limit
+        +bool has_next
+    }
+
+    class SolicitudService {
+        -SolicitudRepository repository
+        -AsyncSession session
+        +create(data) Solicitudes
+        +list(filters) Page
+        +get_by_id(id) Solicitudes
+        +update_state(id, state) Solicitudes
+    }
+    class SolicitudRepository {
+        -AsyncSession session
+        +create(data) Solicitudes
+        +get_by_id(id) Solicitudes?
+        +get_by_external_id(id) Solicitudes?
+        +list(filters) Page
+        +update(solicitud, data) Solicitudes
+        +delete(solicitud) void
+    }
+    class Page~T~ {
+        +list~T~ items
+        +int total
+        +int offset
+        +int limit
+        +has_next bool
+    }
+    class Solicitudes {
+        +UUID id
+        +str external_id
+        +RequestType type
+        +str applicant
+        +str email
+        +str description
+        +Priority priority
+        +State state
+        +datetime created_at
+        +datetime updated_at
+    }
+    class AsyncSession
+
+    class RequestType {
+        <<enumeration>>
+        PLATFORM_ACCESS
+        TECHNICAL_SUPPORT
+        ACADEMIC
+        ADMINISTRATIVE
+    }
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+    class State {
+        <<enumeration>>
+        RECEIVED
+        IN_PROGRESS
+        COMPLETED
+        REJECTED
+    }
+
+    class AppError {
+        +int status_code
+        +str code
+        +str message
+        +dict details
+    }
+    class ResourceNotFoundError
+    class ConflictError
+    class DatabaseUnavailableError
+    class BusinessRuleError
+    class UnauthorizedError
+    class ForbiddenError
+
+    class RedisResponseCacheMiddleware {
+        -AsyncRedisClient redis
+        -int ttl_seconds
+        -str key_prefix
+        +__call__(scope, receive, send)
+    }
+    class RequestQueueMiddleware {
+        -Semaphore semaphore
+        -int max_queue_size
+        -float timeout_seconds
+        +__call__(scope, receive, send)
+    }
+    class RedisRateLimitMiddleware {
+        -AsyncRedisClient redis
+        -int requests
+        -int window_seconds
+        +__call__(scope, receive, send)
+    }
+    class AsyncRedisClient {
+        <<interface>>
+        +get(key)
+        +set(key, value, ex)
+        +incr(key)
+    }
+
+    SolicitudService *-- SolicitudRepository
+    SolicitudService --> AsyncSession
+    SolicitudRepository --> AsyncSession
+    SolicitudRepository --> Solicitudes
+    SolicitudRepository ..> SolicitudCreate
+    SolicitudRepository ..> SolicitudUpdate
+    SolicitudRepository ..> SolicitudFilters
+    SolicitudRepository ..> Page
+    SolicitudService ..> ConflictError
+    SolicitudService ..> ResourceNotFoundError
+    SolicitudPageResponse o-- SolicitudResponse
+    Solicitudes --> RequestType
+    Solicitudes --> Priority
+    Solicitudes --> State
+    SolicitudCreate --> RequestType
+    SolicitudCreate --> Priority
+    SolicitudCreate --> State
+    RedisResponseCacheMiddleware --> AsyncRedisClient
+    RedisRateLimitMiddleware --> AsyncRedisClient
+
+    AppError <|-- ResourceNotFoundError
+    AppError <|-- ConflictError
+    AppError <|-- DatabaseUnavailableError
+    AppError <|-- BusinessRuleError
+    AppError <|-- UnauthorizedError
+    AppError <|-- ForbiddenError

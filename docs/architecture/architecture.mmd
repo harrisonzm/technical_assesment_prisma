@@ -1,0 +1,29 @@
+flowchart LR
+    client[Cliente HTTP / Postman]
+    consumer[Consumidor HTTP\nHTTPX + reintentos]
+
+    subgraph docker[Docker Compose]
+        subgraph backend[Backend FastAPI]
+            middleware[Middleware HTTP\nRequest ID + logs\nrate limit + cola + GZip + caché]
+            api[API v1\nRutas + Pydantic]
+            service[Servicio de dominio\nReglas de negocio]
+            repository[Repositorio\nSQLAlchemy async]
+
+            middleware --> api
+            api --> service
+            service --> repository
+        end
+
+        redis[(Redis 7\nCaché GET con TTL)]
+        postgres[(PostgreSQL 16\nFuente de verdad)]
+        alembic[Alembic\nMigraciones + seed]
+        logs[(Volumen de logs)]
+
+        middleware <-->|GET/SET + versión| redis
+        repository <-->|SQL async| postgres
+        alembic -->|upgrade head| postgres
+        middleware -->|logs estructurados| logs
+    end
+
+    client -->|HTTP / JSON| middleware
+    consumer -->|POST + GET / JSON| middleware
