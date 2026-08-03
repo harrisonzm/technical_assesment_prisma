@@ -6,7 +6,7 @@ import pytest
 from app.db.models.solicitudes import Solicitudes
 from app.repositories.solicitudes import SolicitudRepository
 from app.schemas.enums import Priority, RequestType, State
-from app.schemas.solicitudes import SolicitudCreate, SolicitudUpdate
+from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters, SolicitudUpdate
 
 
 @pytest.mark.asyncio
@@ -70,3 +70,25 @@ async def test_update_only_changes_provided_fields():
     assert result.state is State.RECEIVED
     session.flush.assert_awaited_once()
     session.refresh.assert_awaited_once_with(solicitud)
+
+
+@pytest.mark.asyncio
+async def test_list_returns_page_with_total_and_has_next():
+    items = [MagicMock(spec=Solicitudes), MagicMock(spec=Solicitudes)]
+    scalar_result = MagicMock()
+    scalar_result.scalars.return_value.all.return_value = items
+    session = MagicMock()
+    session.scalar = AsyncMock(return_value=3)
+    session.execute = AsyncMock(return_value=scalar_result)
+
+    page = await SolicitudRepository(session).list(
+        SolicitudFilters(offset=0, limit=2)
+    )
+
+    assert page.items == items
+    assert page.total == 3
+    assert page.offset == 0
+    assert page.limit == 2
+    assert page.has_next is True
+    session.scalar.assert_awaited_once()
+    session.execute.assert_awaited_once()
