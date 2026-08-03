@@ -1,4 +1,4 @@
-from app.core.logging import emit_log
+from app.core.config.logging import emit_log
 
 
 def test_emit_log_writes_to_file_without_permission_error(tmp_path, monkeypatch):

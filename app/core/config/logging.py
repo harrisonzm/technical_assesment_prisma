@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from app.core.request_context import get_context
+from app.core.config.request_context import get_context
 
 
 def build_log_event(

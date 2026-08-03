@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 import time
 
-from app.core.config import Settings
-from app.core.logging import emit_log
+from app.core.config.config import Settings
+from app.core.config.logging import emit_log
 
 
 def main() -> None:
