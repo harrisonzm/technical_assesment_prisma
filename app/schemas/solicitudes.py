@@ -6,7 +6,11 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app.schemas.enums import Priority, RequestType, State
 
 
-class SolicitudCreate(BaseModel):
+class StrictRequestModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class SolicitudCreate(StrictRequestModel):
     external_id: str = Field(min_length=1, max_length=100)
     type: RequestType
     applicant: str = Field(min_length=1, max_length=40)
@@ -16,7 +20,7 @@ class SolicitudCreate(BaseModel):
     state: State = State.RECEIVED
 
 
-class SolicitudUpdate(BaseModel):
+class SolicitudUpdate(StrictRequestModel):
     type: RequestType | None = None
     applicant: str | None = Field(default=None, min_length=1, max_length=40)
     email: EmailStr | None = None
@@ -25,11 +29,11 @@ class SolicitudUpdate(BaseModel):
     state: State | None = None
 
 
-class SolicitudStateUpdate(BaseModel):
+class SolicitudStateUpdate(StrictRequestModel):
     state: State
 
 
-class SolicitudFilters(BaseModel):
+class SolicitudFilters(StrictRequestModel):
     id: UUID | None = None
     external_id: str | None = Field(default=None, min_length=1, max_length=100)
     type: RequestType | None = None
