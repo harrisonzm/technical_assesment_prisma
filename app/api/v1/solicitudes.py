@@ -11,6 +11,7 @@ from app.schemas.solicitudes import (
     SolicitudFilters,
     SolicitudPageResponse,
     SolicitudResponse,
+    SolicitudStateUpdate,
 )
 from app.services.solicitudes import SolicitudService
 
@@ -43,6 +44,17 @@ async def get_solicitud_by_id(
 ) -> SolicitudResponse:
     service = SolicitudService(SolicitudRepository(session), session)
     solicitud = await service.get_by_id(solicitud_id)
+    return SolicitudResponse.model_validate(solicitud)
+
+
+@router.patch("/{solicitud_id}/estado", response_model=SolicitudResponse)
+async def update_solicitud_state(
+    solicitud_id: UUID,
+    data: SolicitudStateUpdate,
+    session: DbSession,
+) -> SolicitudResponse:
+    service = SolicitudService(SolicitudRepository(session), session)
+    solicitud = await service.update_state(solicitud_id, data.state)
     return SolicitudResponse.model_validate(solicitud)
 
 
