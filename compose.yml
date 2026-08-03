@@ -30,6 +30,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app_user:change_me@db:5432/app_db}
     ports:
       - "8000:8000"
+    volumes:
+      - backend-logs:/var/log/technical_assessment_prisma
     depends_on:
       db:
         condition: service_healthy
@@ -52,9 +54,13 @@ services:
       CONSUMER_FAIL_ONCE: ${CONSUMER_FAIL_ONCE:-false}
       CONSUMER_INTERVAL_SECONDS: ${CONSUMER_INTERVAL_SECONDS:-5}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app_user:change_me@db:5432/app_db}
+    volumes:
+      - consumer-logs:/var/log/technical_assessment_prisma
     depends_on:
       backend:
         condition: service_healthy
 
 volumes:
   postgres-data:
+  backend-logs:
+  consumer-logs:
