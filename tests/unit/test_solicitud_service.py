@@ -1,9 +1,10 @@
 from unittest.mock import AsyncMock, MagicMock
+from uuid import UUID
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.core.Exceptions.RequestError import ConflictError
+from app.core.Exceptions.RequestError import ConflictError, ResourceNotFoundError
 from app.db.models.solicitudes import Solicitudes
 from app.repositories.pagination import Page
 from app.schemas.enums import Priority, RequestType, State
@@ -89,3 +90,33 @@ async def test_list_solicitudes_delegates_filters_to_repository():
     assert result is expected_page
     assert result.has_next is True
     repository.list.assert_awaited_once_with(filters)
+
+
+@pytest.mark.asyncio
+async def test_get_solicitud_by_id_returns_existing_record():
+    solicitud_id = UUID("12345678-1234-5678-1234-567812345678")
+    expected_solicitud = MagicMock(spec=Solicitudes)
+    repository = MagicMock()
+    repository.get_by_id = AsyncMock(return_value=expected_solicitud)
+    session = MagicMock()
+
+    result = await SolicitudService(repository, session).get_by_id(solicitud_id)
+
+    assert result is expected_solicitud
+    repository.get_by_id.assert_awaited_once_with(solicitud_id)
+
+
+@pytest.mark.asyncio
+async def test_get_solicitud_by_id_raises_404_when_record_does_not_exist():
+    solicitud_id = UUID("00000000-0000-0000-0000-000000000000")
+    repository = MagicMock()
+    repository.get_by_id = AsyncMock(return_value=None)
+    session = MagicMock()
+
+    with pytest.raises(ResourceNotFoundError) as error:
+        await SolicitudService(repository, session).get_by_id(solicitud_id)
+
+    assert error.value.status_code == 404
+    assert error.value.code == "resource_not_found"
+    assert error.value.details == {"solicitud_id": str(solicitud_id)}
+    repository.get_by_id.assert_awaited_once_with(solicitud_id)
