@@ -10,6 +10,16 @@ from app.db.session import get_db_session
 from app.main import create_app
 
 
+VALID_PAYLOAD = {
+    "external_id": "EXT-INVALID",
+    "type": "Acceso a plataforma",
+    "applicant": "Ada Lovelace",
+    "email": "ada@example.com",
+    "description": "Platform access request",
+    "priority": "Alta",
+}
+
+
 @pytest.mark.asyncio
 async def test_create_solicitud_endpoint_returns_created_resource():
     session = MagicMock()
@@ -118,3 +128,52 @@ async def test_create_solicitud_endpoint_returns_409_for_duplicate_external_id()
         }
     }
     session.rollback.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "invalid_payload",
+    [
+        {**VALID_PAYLOAD, "email": "not-an-email"},
+        {**VALID_PAYLOAD, "type": "Tipo inexistente"},
+        {
+            key: value
+            for key, value in VALID_PAYLOAD.items()
+            if key != "description"
+        },
+    ],
+    ids=["invalid-email", "invalid-catalog-value", "missing-required-field"],
+)
+async def test_create_solicitud_endpoint_rejects_invalid_payload(
+    invalid_payload: dict[str, str],
+):
+    session = MagicMock()
+    session.flush = AsyncMock()
+    session.commit = AsyncMock()
+
+    async def override_db_session():
+        yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db_session] = override_db_session
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/v1/solicitudes",
+            json=invalid_payload,
+        )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert response.headers["x-request-id"]
+    assert response.json()["error"]["code"] == "validation_error"
+    assert response.json()["error"]["message"] == "Request validation failed"
+    assert response.json()["error"]["details"]["errors"]
+    assert response.json()["error"]["request_id"] == response.headers["x-request-id"]
+    session.add.assert_not_called()
+    session.flush.assert_not_awaited()
+    session.commit.assert_not_awaited()
