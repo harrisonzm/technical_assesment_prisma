@@ -7,7 +7,8 @@ from app.core.Exceptions.RequestError import ConflictError, ResourceNotFoundErro
 from app.db.models.solicitudes import Solicitudes
 from app.repositories.pagination import Page
 from app.repositories.solicitudes import SolicitudRepository
-from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters
+from app.schemas.enums import State
+from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters, SolicitudUpdate
 
 
 class SolicitudService:
@@ -43,3 +44,16 @@ class SolicitudService:
             )
 
         return solicitud
+
+    async def update_state(
+        self,
+        solicitud_id: UUID,
+        state: State,
+    ) -> Solicitudes:
+        solicitud = await self.get_by_id(solicitud_id)
+        updated_solicitud = await self.repository.update(
+            solicitud,
+            SolicitudUpdate(state=state),
+        )
+        await self.session.commit()
+        return updated_solicitud
