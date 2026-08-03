@@ -45,7 +45,6 @@ class Solicitudes(Base):
     email: Mapped[str] = mapped_column(
         String(254),
         nullable=False,
-        unique=True
     )
     
     description: Mapped[str] = mapped_column(
