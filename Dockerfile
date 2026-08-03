@@ -48,6 +48,16 @@ RUN mkdir -p /var/log/technical_assessment_prisma \
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-# Run the application as a non-root user.
+FROM base AS test
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install -r requirements-dev.txt
+
+USER appuser
+CMD ["pytest", "-q"]
+
+
+FROM base AS runtime
+
 USER appuser
 CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

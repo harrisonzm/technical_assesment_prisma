@@ -34,7 +34,11 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./app.db"
 
     # Consumidor
-    consumer_interval_seconds: float = 5.0
+    consumer_api_url: str = "http://backend:8000/api/v1"
+    consumer_timeout_seconds: float = Field(default=5.0, gt=0)
+    consumer_max_retries: int = Field(default=3, ge=0)
+    consumer_retry_delay_seconds: float = Field(default=1.0, ge=0)
+    consumer_batch_size: int = Field(default=3, ge=1, le=100)
     log_file_path: str | None = None
 
     @property
