@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.solicitudes import Solicitudes
+from app.repositories.pagination import Page
 from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters, SolicitudUpdate
 
 
@@ -27,7 +28,7 @@ class SolicitudRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list(self, filters: SolicitudFilters) -> list[Solicitudes]:
+    async def list(self, filters: SolicitudFilters) -> Page[Solicitudes]:
         statement = select(Solicitudes)
 
         for field in (
@@ -46,13 +47,23 @@ class SolicitudRepository:
             if value is not None:
                 statement = statement.where(getattr(Solicitudes, field) == value)
 
-        statement = (
+        count_statement = select(func.count()).select_from(statement.subquery())
+        total = await self.session.scalar(count_statement)
+
+        page_statement = (
             statement.order_by(Solicitudes.created_at.desc())
             .offset(filters.offset)
             .limit(filters.limit)
         )
-        result = await self.session.execute(statement)
-        return list(result.scalars().all())
+        result = await self.session.execute(page_statement)
+        items = list(result.scalars().all())
+
+        return Page(
+            items=items,
+            total=total or 0,
+            offset=filters.offset,
+            limit=filters.limit,
+        )
 
     async def update(
         self,
