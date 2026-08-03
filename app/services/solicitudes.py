@@ -3,8 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.Exceptions.RequestError import ConflictError
 from app.db.models.solicitudes import Solicitudes
+from app.repositories.pagination import Page
 from app.repositories.solicitudes import SolicitudRepository
-from app.schemas.solicitudes import SolicitudCreate
+from app.schemas.solicitudes import SolicitudCreate, SolicitudFilters
 
 
 class SolicitudService:
@@ -27,3 +28,6 @@ class SolicitudService:
                 "A solicitud with this external ID already exists",
                 details={"external_id": data.external_id},
             ) from exc
+
+    async def list(self, filters: SolicitudFilters) -> Page[Solicitudes]:
+        return await self.repository.list(filters)
