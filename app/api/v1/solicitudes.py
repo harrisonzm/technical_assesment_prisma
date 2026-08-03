@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,6 +34,16 @@ async def list_solicitudes(
         limit=page.limit,
         has_next=page.has_next,
     )
+
+
+@router.get("/{solicitud_id}", response_model=SolicitudResponse)
+async def get_solicitud_by_id(
+    solicitud_id: UUID,
+    session: DbSession,
+) -> SolicitudResponse:
+    service = SolicitudService(SolicitudRepository(session), session)
+    solicitud = await service.get_by_id(solicitud_id)
+    return SolicitudResponse.model_validate(solicitud)
 
 
 @router.post(
