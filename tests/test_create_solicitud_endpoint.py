@@ -1,0 +1,70 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock
+from uuid import UUID
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+from app.db.session import get_db_session
+from app.main import create_app
+
+
+@pytest.mark.asyncio
+async def test_create_solicitud_endpoint_returns_created_resource():
+    session = MagicMock()
+    lookup_result = MagicMock()
+    lookup_result.scalar_one_or_none.return_value = None
+    session.execute = AsyncMock(return_value=lookup_result)
+    session.flush = AsyncMock()
+    session.commit = AsyncMock()
+    session.rollback = AsyncMock()
+
+    async def refresh(solicitud):
+        timestamp = datetime.now(UTC)
+        solicitud.id = UUID("12345678-1234-5678-1234-567812345678")
+        solicitud.created_at = timestamp
+        solicitud.updated_at = timestamp
+
+    session.refresh = AsyncMock(side_effect=refresh)
+
+    async def override_db_session():
+        yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db_session] = override_db_session
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/v1/solicitudes",
+            json={
+                "external_id": "EXT-001",
+                "type": "Acceso a plataforma",
+                "applicant": "Ada Lovelace",
+                "email": "ada@example.com",
+                "description": "Platform access request",
+                "priority": "Alta",
+            },
+        )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+    assert response.headers["x-request-id"]
+    assert response.json() == {
+        "id": "12345678-1234-5678-1234-567812345678",
+        "external_id": "EXT-001",
+        "type": "Acceso a plataforma",
+        "applicant": "Ada Lovelace",
+        "email": "ada@example.com",
+        "description": "Platform access request",
+        "priority": "Alta",
+        "state": "Recibida",
+        "created_at": response.json()["created_at"],
+        "updated_at": response.json()["updated_at"],
+    }
+    session.add.assert_called_once()
+    session.flush.assert_awaited_once()
+    session.commit.assert_awaited_once()

@@ -9,6 +9,6 @@ class AppError(Exception):
         message: str,
         *,
         details: dict | None = None):
-        super(message)
+        super().__init__(message)
         self.message = message
         self.details = details

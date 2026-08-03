@@ -6,11 +6,7 @@ from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-load_dotenv(PROJECT_ROOT / ".env", override=False)
-
-
+load_dotenv()
 class Settings(BaseSettings):
     """Configuración de la aplicación, cargada desde variables de entorno o .env."""
 

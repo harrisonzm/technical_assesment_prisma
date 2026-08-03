@@ -6,6 +6,10 @@ class ResourceNotFoundError(AppError):
 class ConflictError(AppError):
     status_code = 409
     code = 'conflict'
+
+class DatabaseUnavailableError(AppError):
+    status_code = 503
+    code = 'database_unavailable'
     
 class BussinesRuleError(AppError):
     code = 422
