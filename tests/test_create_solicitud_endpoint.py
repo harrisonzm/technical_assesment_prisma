@@ -4,6 +4,7 @@ from uuid import UUID
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db_session
 from app.main import create_app
@@ -68,3 +69,52 @@ async def test_create_solicitud_endpoint_returns_created_resource():
     session.add.assert_called_once()
     session.flush.assert_awaited_once()
     session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_create_solicitud_endpoint_returns_409_for_duplicate_external_id():
+    session = MagicMock()
+    session.flush = AsyncMock(
+        side_effect=IntegrityError(
+            "INSERT INTO solicitudes",
+            {"externalId": "EXT-DUPLICATE"},
+            Exception("duplicate key"),
+        )
+    )
+    session.rollback = AsyncMock()
+
+    async def override_db_session():
+        yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db_session] = override_db_session
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/v1/solicitudes",
+            json={
+                "external_id": "EXT-DUPLICATE",
+                "type": "Acceso a plataforma",
+                "applicant": "Grace Hopper",
+                "email": "grace@example.com",
+                "description": "Duplicate request",
+                "priority": "Media",
+            },
+        )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 409
+    assert response.headers["x-request-id"]
+    assert response.json() == {
+        "error": {
+            "code": "conflict",
+            "message": "A solicitud with this external ID already exists",
+            "details": {"external_id": "EXT-DUPLICATE"},
+            "request_id": response.headers["x-request-id"],
+        }
+    }
+    session.rollback.assert_awaited_once()
