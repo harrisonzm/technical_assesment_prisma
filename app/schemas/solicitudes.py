@@ -26,6 +26,7 @@ class SolicitudUpdate(BaseModel):
 
 
 class SolicitudFilters(BaseModel):
+    id: UUID | None = None
     external_id: str | None = Field(default=None, min_length=1, max_length=100)
     type: RequestType | None = None
     applicant: str | None = Field(default=None, min_length=1, max_length=40)

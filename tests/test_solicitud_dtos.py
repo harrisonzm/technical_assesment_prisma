@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -43,9 +44,11 @@ def test_filters_limit_is_bounded():
         SolicitudFilters(limit=101)
 
 
-def test_filters_accept_every_model_column_except_id():
+def test_filters_accept_every_model_column():
     timestamp = datetime.now(UTC)
+    solicitud_id = UUID("12345678-1234-5678-1234-567812345678")
     filters = SolicitudFilters(
+        id=solicitud_id,
         external_id="EXT-001",
         type=RequestType.ADMINISTRATIVE,
         applicant="Ada Lovelace",
@@ -58,6 +61,7 @@ def test_filters_accept_every_model_column_except_id():
     )
 
     assert set(filters.model_fields_set) == {
+        "id",
         "external_id",
         "type",
         "applicant",
@@ -68,4 +72,4 @@ def test_filters_accept_every_model_column_except_id():
         "created_at",
         "updated_at",
     }
-    assert "id" not in SolicitudFilters.model_fields
+    assert filters.id == solicitud_id
